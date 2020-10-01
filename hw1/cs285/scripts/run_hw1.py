@@ -1,6 +1,7 @@
 import os
 import time
-
+import gym
+import torch
 from cs285.infrastructure.rl_trainer import RL_Trainer
 from cs285.agents.bc_agent import BCAgent
 from cs285.policies.loaded_gaussian_policy import LoadedGaussianPolicy
@@ -84,7 +85,7 @@ def main():
 
     # convert args to dictionary
     params = vars(args)
-
+    print(params)
     ##################################
     ### CREATE DIRECTORY FOR LOGGING
     ##################################
@@ -108,11 +109,10 @@ def main():
     if not(os.path.exists(logdir)):
         os.makedirs(logdir)
 
-
+    #print(params)
     ###################
     ### RUN TRAINING
     ###################
-
     trainer = BC_Trainer(params)
     trainer.run_training_loop()
 
