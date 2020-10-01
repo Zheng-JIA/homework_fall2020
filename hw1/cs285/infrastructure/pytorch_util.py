@@ -54,8 +54,6 @@ def build_mlp(
     netList.append(nn.Linear(size, output_size))
     netList.append(output_activation)
     net = nn.Sequential(*netList)
-
-    print(net)
     return net
     raise NotImplementedError
 

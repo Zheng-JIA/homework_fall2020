@@ -81,10 +81,11 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             observation = obs[None]
 
         # TODO return the action that the policy prescribes
+        observation = ptu.from_numpy(observation.astype(np.float32))
         if self.discrete:
-            return ptu.to_numpy(self.logits_na(ptu.from_numpy(observation)))
+            return ptu.to_numpy(self.logits_na(observation))
         else:
-            return ptu.to_numpy(self.mean_net(ptu.from_numpy(observation)))
+            return ptu.to_numpy(self.mean_net(observation))
         raise NotImplementedError
 
     # update/train this policy
@@ -113,9 +114,13 @@ class MLPPolicySL(MLPPolicy):
             adv_n=None, acs_labels_na=None, qvals=None
     ):
         # TODO: update the policy and return the loss
+        if self.discrete:
+            y_pred = self.logits_na(ptu.from_numpy(observations))
+        else:
+            y_pred = self.mean_net(ptu.from_numpy(observations))
+        y = torch.tensor(actions, requires_grad=True)
+        loss = self.loss(y_pred, y)
         self.optimizer.zero_grad()
-        loss = self.loss(torch.tensor(self.get_action(observations), requires_grad=True),
-                         torch.tensor(actions, requires_grad=True))
         loss.backward()
         self.optimizer.step()
         return {
