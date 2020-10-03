@@ -118,11 +118,12 @@ class MLPPolicySL(MLPPolicy):
             y_pred = self.logits_na(ptu.from_numpy(observations))
         else:
             y_pred = self.mean_net(ptu.from_numpy(observations))
-        y = torch.tensor(actions, requires_grad=True)
+        y = ptu.from_numpy(actions)
         loss = self.loss(y_pred, y)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
         return {
             # You can add extra logging information here, but keep this line
             'Training Loss': ptu.to_numpy(loss),
