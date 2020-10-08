@@ -78,7 +78,7 @@ class ReplayBuffer(object):
             num_recent_rollouts_to_return = 0
             num_datapoints_so_far = 0
             index = -1
-            while num_datapoints_so_far < batch_size:
+            while num_datapoints_so_far < batch_size: # batch size is the total data point containing multiple rollouts
                 recent_rollout = self.paths[index]
                 index -=1
                 num_recent_rollouts_to_return +=1

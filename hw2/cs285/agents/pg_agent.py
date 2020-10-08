@@ -3,7 +3,7 @@ import numpy as np
 from .base_agent import BaseAgent
 from cs285.policies.MLP_policy import MLPPolicyPG
 from cs285.infrastructure.replay_buffer import ReplayBuffer
-
+from cs285.infrastructure.utils import normalize
 
 class PGAgent(BaseAgent):
     def __init__(self, env, agent_params):
@@ -46,7 +46,7 @@ class PGAgent(BaseAgent):
 
         # TODO: step 3: use all datapoints (s_t, a_t, q_t, adv_t) to update the PG actor/policy
         ## HINT: `train_log` should be returned by your actor update method
-        train_log = TODO
+        train_log = self.actor.update(observations, actions, advantages, q_values)
 
         return train_log
 
@@ -125,13 +125,15 @@ class PGAgent(BaseAgent):
 
             Input: list of rewards {r_0, r_1, ..., r_t', ... r_T} from a single rollout of length T
 
-            Output: list where each index t contains sum_{t'=0}^T gamma^t' r_{t'}
+            Output: list where each index t contains sum_{t'=0}^T gamma ^t' r_{t'}
         """
 
         # TODO: create list_of_discounted_returns
         # Hint: note that all entries of this output are equivalent
             # because each sum is from 0 to T (and doesnt involve t)
-
+        discounted_rewards = np.array([(self.gamma ** t) * rewards[t] for t in range(len(rewards))])
+        sum_discounted_rewards = np.sum(discounted_rewards)
+        list_of_discounted_returns = sum_discounted_rewards * np.ones(len(rewards))
         return list_of_discounted_returns
 
     def _discounted_cumsum(self, rewards):
@@ -146,6 +148,7 @@ class PGAgent(BaseAgent):
             # because the summation happens over [t, T] instead of [0, T]
         # HINT2: it is possible to write a vectorized solution, but a solution
             # using a for loop is also fine
-
+        discounted_rewards = np.array([(self.gamma ** t) * rewards[t] for t in range(len(rewards))])
+        list_of_discounted_cumsums = discounted_rewards[::-1].cumsum()[::-1]
         return list_of_discounted_cumsums
 
