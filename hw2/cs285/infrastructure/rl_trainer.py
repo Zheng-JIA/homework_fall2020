@@ -156,7 +156,11 @@ class RL_Trainer(object):
         if load_initial_expertdata == None:
             paths, envsteps_this_batch = utils.sample_trajectories(self.env, collect_policy, batch_size, self.params['ep_len'])
         print("Number of paths we collect is %d" % len(paths))
-        print("Number of transitions in path[0] is %d" % len(paths[0]["reward"]))
+        length_paths = []
+        for n_path, path in enumerate(paths):
+            length_paths.append(len(paths[n_path]["reward"]))
+        print("Number of transitions in each path is")
+        print(length_paths)
         # collect more rollouts with the same policy, to be saved as videos in tensorboard
         # note: here, we collect MAX_NVIDEO rollouts, each of length MAX_VIDEO_LEN
         train_video_paths = None

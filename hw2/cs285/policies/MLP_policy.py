@@ -150,22 +150,19 @@ class MLPPolicyPG(MLPPolicy):
             # by the `forward` method
         # HINT3: don't forget that `optimizer.step()` MINIMIZES a loss
 
-        #if len(actions.shape) == 1:
-        #    actions = actions.unsqueeze(1)
-        #if len(advantages.shape) == 1:
-        #    advantages = advantages.unsqueeze(1)
+        if self.discrete is not True:
+            if len(actions.shape) == 1:
+                actions = actions.unsqueeze(1)
+            if len(advantages.shape) == 1:
+                advantages = advantages.unsqueeze(1)
 
         action_distribution = self.forward(observations)
-        #print(actions)
-        #print(action_distribution.probs)
-        log_prob = -action_distribution.log_prob(actions)
-        #print(log_prob)
+        log_prob = - action_distribution.log_prob(actions)
         loss = torch.mean(log_prob * advantages)
-        #print("torch.log is ")
-        #print(torch.log(action_distribution.probs))
-        #LLLL = nn.NLLLoss()
-        #print(LLLL(torch.log(action_distribution.probs), actions.type(torch.long)))
-        #print(torch.mean(log_prob))
+        #print(loss)
+        #print(torch.mean((-log_prob * advantages).squeeze()))
+        #print(self.baseline_loss(self.mean_net(observations), actions))
+
         # TODO: optimize `loss` using `self.optimizer`
         # HINT: remember to `zero_grad` first
         self.optimizer.zero_grad()
