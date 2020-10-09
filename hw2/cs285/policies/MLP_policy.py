@@ -99,7 +99,8 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             action = action_distribution.sample()
             action = ptu.to_numpy(action)
         else:
-            action = ptu.to_numpy(self.forward(observation))
+            action_distribution = self.forward(observation)
+            action = action_distribution.sample()
         return action
 
     # update/train this policy
@@ -118,7 +119,10 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             action_distribution= nn.functional.softmax(action_distribution, dim=1) # convert to probability [0, 1]
             action_distribution = distributions.Categorical(action_distribution)
         else:
-            action_distribution = self.mean_net(observation)
+            mean = self.mean_net(observation)
+            std = torch.diag(torch.exp(self.logstd))
+            action_distribution = distributions.normal.Normal(mean, std)
+
             # my to do construct Normal distribution
 
         return action_distribution
@@ -145,10 +149,23 @@ class MLPPolicyPG(MLPPolicy):
         # HINT2: you will want to use the `log_prob` method on the distribution returned
             # by the `forward` method
         # HINT3: don't forget that `optimizer.step()` MINIMIZES a loss
-        action_distribution = self.forward(observations)
-        log_prob = -action_distribution.log_prob(actions)
-        loss = torch.sum(log_prob * advantages)
 
+        #if len(actions.shape) == 1:
+        #    actions = actions.unsqueeze(1)
+        #if len(advantages.shape) == 1:
+        #    advantages = advantages.unsqueeze(1)
+
+        action_distribution = self.forward(observations)
+        #print(actions)
+        #print(action_distribution.probs)
+        log_prob = -action_distribution.log_prob(actions)
+        #print(log_prob)
+        loss = torch.mean(log_prob * advantages)
+        #print("torch.log is ")
+        #print(torch.log(action_distribution.probs))
+        #LLLL = nn.NLLLoss()
+        #print(LLLL(torch.log(action_distribution.probs), actions.type(torch.long)))
+        #print(torch.mean(log_prob))
         # TODO: optimize `loss` using `self.optimizer`
         # HINT: remember to `zero_grad` first
         self.optimizer.zero_grad()

@@ -116,7 +116,6 @@ class RL_Trainer(object):
             else:
                 self.logvideo = False
             self.log_video = self.logvideo
-            print("log video?")
 
             # decide if metrics should be logged
             if self.params['scalar_log_freq'] == -1:
@@ -158,7 +157,6 @@ class RL_Trainer(object):
             paths, envsteps_this_batch = utils.sample_trajectories(self.env, collect_policy, batch_size, self.params['ep_len'])
         print("Number of paths we collect is %d" % len(paths))
         print("Number of transitions in path[0] is %d" % len(paths[0]["reward"]))
-        print("Number of transitions in path[1] is %d" % len(paths[1]["reward"]))
         # collect more rollouts with the same policy, to be saved as videos in tensorboard
         # note: here, we collect MAX_NVIDEO rollouts, each of length MAX_VIDEO_LEN
         train_video_paths = None
