@@ -145,10 +145,10 @@ class MLPPolicyPG(MLPPolicy):
         self.baseline_loss = nn.MSELoss()
 
     def update(self, observations, actions, advantages, q_values=None):
-        # dim of observations: (close to batch_size, ob_dim)
-        # dim of actions: (close to batch_size)
-        # dim of advantages:  (close to batch_size)
-        # dim of q_values: (close to batch_size)
+        # dim of observations: (batch_size, ob_dim)
+        # dim of actions: (batch_size)
+        # dim of advantages:  (batch_size)
+        # dim of q_values: (batch_size)
         observations = ptu.from_numpy(observations)
         actions = ptu.from_numpy(actions)
         advantages = ptu.from_numpy(advantages)
@@ -180,13 +180,17 @@ class MLPPolicyPG(MLPPolicy):
         if self.nn_baseline:
             ## TODO: normalize the q_values to have a mean of zero and a standard deviation of one
             ## HINT: there is a `normalize` function in `infrastructure.utils`
+            #print("Q values are")
+            #print(np.max(q_values))
+
             targets = utils.normalize(q_values, np.mean(q_values), np.std(q_values))
             targets = ptu.from_numpy(targets)
             #print(targets.shape)
             ## TODO: use the `forward` method of `self.baseline` to get baseline predictions
-            baseline_predictions = self.baseline(observations).squeeze()
+            baseline_predictions = self.baseline(observations)
+            #print(torch.std(baseline_predictions))
+            baseline_predictions = baseline_predictions.squeeze()
 
-            #print(baseline_predictions.squeeze())
             ## avoid any subtle broadcasting bugs that can arise when dealing with arrays of shape
             ## [ N ] versus shape [ N x 1 ]
             ## HINT: you can use `squeeze` on torch tensors to remove dimensions of size 1
@@ -194,8 +198,10 @@ class MLPPolicyPG(MLPPolicy):
             
             # TODO: compute the loss that should be optimized for training the baseline MLP (`self.baseline`)
             # HINT: use `F.mse_loss`
-            baseline_loss = self.baseline_loss(targets, baseline_predictions.squeeze())
-
+            baseline_loss = self.baseline_loss(targets, baseline_predictions)
+            #print(targets)
+            #print(baseline_predictions)
+            #print(baseline_loss)
             # TODO: optimize `baseline_loss` using `self.baseline_optimizer`
             # HINT: remember to `zero_grad` first
             self.baseline_optimizer.zero_grad()

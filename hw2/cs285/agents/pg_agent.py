@@ -84,6 +84,7 @@ class PGAgent(BaseAgent):
         # by querying the neural network that you're using to learn the baseline
         if self.nn_baseline:
             baselines_unnormalized = self.actor.run_baseline_prediction(obs)
+            #print(np.mean(baselines_unnormalized))
             ## ensure that the baseline and q_values have the same dimensionality
             ## to prevent silent broadcasting errors
             assert baselines_unnormalized.ndim == q_values.ndim
@@ -148,7 +149,17 @@ class PGAgent(BaseAgent):
             # because the summation happens over [t, T] instead of [0, T]
         # HINT2: it is possible to write a vectorized solution, but a solution
             # using a for loop is also fine
-        discounted_rewards = np.array([(self.gamma ** t) * rewards[t] for t in range(len(rewards))])
-        list_of_discounted_cumsums = discounted_rewards[::-1].cumsum()[::-1]
+
+        #discounted_rewards = np.array([(self.gamma ** t) * rewards[t] for t in range(len(rewards))])
+        #list_of_discounted_cumsums = discounted_rewards[::-1].cumsum()[::-1]
+        #print(rewards)
+        list_of_discounted_cumsums = []
+        T = len(rewards)
+        Gt = 0
+        for t in range(T)[::-1]:
+            Gt = self.gamma * Gt + rewards[t]
+            list_of_discounted_cumsums.append(Gt)
+        list_of_discounted_cumsums = list_of_discounted_cumsums[::-1]
+        #print(list_of_discounted_cumsums)
         return list_of_discounted_cumsums
 
