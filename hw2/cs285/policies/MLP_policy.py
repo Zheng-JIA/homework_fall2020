@@ -94,14 +94,11 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
 
         # TODO return the action that the policy prescribes
         observation = ptu.from_numpy(observation.astype(np.float32))
-        if self.discrete:
-            action_distribution = self.forward(observation)
-            action = action_distribution.sample()
-            action = ptu.to_numpy(action)
-        else:
-            action_distribution = self.forward(observation)
-            action = action_distribution.sample()
-            action = ptu.to_numpy(action)
+
+        action_distribution = self.forward(observation)
+        action = action_distribution.sample()
+        action = ptu.to_numpy(action)
+
         return action
 
     # update/train this policy
@@ -120,18 +117,11 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             action_distribution= nn.functional.softmax(action_distribution, dim=1) # convert to probability [0, 1]
             action_distribution = distributions.Categorical(action_distribution)
         else:
-            if self.ac_dim == 1:
-                mean = self.mean_net(observation)
-                std = torch.exp(self.logstd)
-                #print(mean)
-                #print(std)
-                action_distribution = distributions.Normal(mean, std)
-            else:
-                mean = self.mean_net(observation)
-                std = torch.exp(self.logstd)
-                std = torch.ger(torch.ones(len(observation)), std)
-                #action_distribution = distributions.MultivariateNormal(mean, std)
-                action_distribution = distributions.normal.Normal(mean, std)
+            mean = self.mean_net(observation)
+            # std = torch.exp(self.logstd)
+            # std = torch.diag(std**2)
+            # action_distribution = distributions.MultivariateNormal(mean, std)
+            action_distribution = distributions.normal.Normal(loc=mean, scale=self.logstd.exp().expand_as(mean))
         return action_distribution
 
 
@@ -168,7 +158,9 @@ class MLPPolicyPG(MLPPolicy):
                 advantages = advantages.unsqueeze(1)
 
         action_distribution = self.forward(observations)
-        log_prob = - action_distribution.log_prob(actions)
+        log_prob = - action_distribution.log_prob(actions).sum(1)
+        if len(log_prob.shape) == 1:
+            log_prob = log_prob.unsqueeze(1)
         loss = torch.mean(log_prob * advantages)
 
         # TODO: optimize `loss` using `self.optimizer`
@@ -185,10 +177,8 @@ class MLPPolicyPG(MLPPolicy):
 
             targets = utils.normalize(q_values, np.mean(q_values), np.std(q_values))
             targets = ptu.from_numpy(targets)
-            #print(targets.shape)
             ## TODO: use the `forward` method of `self.baseline` to get baseline predictions
-            baseline_predictions = self.baseline(observations)
-            #print(torch.std(baseline_predictions))
+            baseline_predictions = self.baseline.forward(observations)
             baseline_predictions = baseline_predictions.squeeze()
 
             ## avoid any subtle broadcasting bugs that can arise when dealing with arrays of shape
@@ -199,9 +189,7 @@ class MLPPolicyPG(MLPPolicy):
             # TODO: compute the loss that should be optimized for training the baseline MLP (`self.baseline`)
             # HINT: use `F.mse_loss`
             baseline_loss = self.baseline_loss(targets, baseline_predictions)
-            #print(targets)
-            #print(baseline_predictions)
-            #print(baseline_loss)
+
             # TODO: optimize `baseline_loss` using `self.baseline_optimizer`
             # HINT: remember to `zero_grad` first
             self.baseline_optimizer.zero_grad()

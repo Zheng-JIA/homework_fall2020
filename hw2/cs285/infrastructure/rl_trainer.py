@@ -12,7 +12,7 @@ from cs285.infrastructure import pytorch_util as ptu
 
 from cs285.infrastructure import utils
 from cs285.infrastructure.logger import Logger
-
+import matplotlib.pyplot as plt
 # how many rollouts to save as videos to tensorboard
 MAX_NVIDEO = 2
 MAX_VIDEO_LEN = 40 # we overwrite this in the code below
@@ -138,6 +138,17 @@ class RL_Trainer(object):
             # train agent (using sampled data from replay buffer)
             train_logs = self.train_agent()
 
+
+            if (itr == 99):
+                ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch = self.agent.sample(
+                    self.params['train_batch_size'])
+                q_values = self.agent.calculate_q_vals(re_batch)
+                print(np.std(q_values))
+                baseline_predictions = self.agent.actor.run_baseline_prediction(ob_batch)
+                baselines = baseline_predictions * np.std(q_values) + np.mean(q_values)
+                plt.plot(q_values)
+                plt.plot(baselines)
+                plt.show()
             # log/save
             if self.logvideo or self.logmetrics:
                 # perform logging
